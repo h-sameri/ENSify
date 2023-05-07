@@ -12,7 +12,10 @@ ENSify is a notification system for [ENS Domains](https://ens.domains/) proposal
 
 ## Demo
 ENSify demo is up at
-[https://ensify.world](https://ensify.world/).
+[https://ensify.world](https://ensify.world/)
+
+Video demo is at
+[https://youtu.be/5bsi-g_NXAM](https://youtu.be/5bsi-g_NXAM)
 
 ## Requirements
 
