@@ -256,7 +256,7 @@ async def subscribe(request: Request, background_tasks: BackgroundTasks, email: 
 
 
 @app.get("/unsubscribe/{token}")
-async def verify(request: Request, token: str):
+async def unsubscribe(request: Request, token: str):
     # look up the subscription by its token
     with SessionLocal() as db:
         subscription = db.query(Subscription).filter_by(token=token).first()
