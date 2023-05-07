@@ -1,0 +1,15 @@
+fastapi
+fastapi-mail
+httpx
+uvicorn[standard]
+pydantic
+sqlalchemy
+#celery
+#vine==1.3.0
+#asyncpg
+python-telegram-bot[socks]
+httpx-socks
+requests
+discord_webhook
+schedule
+python-multipart
