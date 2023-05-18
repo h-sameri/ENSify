@@ -351,6 +351,12 @@ def add_to_waiting_list(db_object: PlatformsSentList, waiting_object: WaitingLis
         db.refresh(db_object)
 
 
+def set_waiting_as_sent(content_type: ContentType):
+    with SessionLocal() as db:
+        db.query(WaitingList).filter_by(content_type=content_type).update({WaitingList.sent: True})
+        db.commit()
+
+
 async def send_telegram_message(channel, message, db_object: PlatformsSentList):
     url = f'https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage'
     data = {'chat_id': channel, 'text': message, 'parse_mode': 'Markdown'}
@@ -411,15 +417,19 @@ async def send_calendar(
 async def send_emails(
         background_tasks: BackgroundTasks, auth: bool = Depends(authenticate)) -> JSONResponse:
     await send_onchain_emails(background_tasks)
+    set_waiting_as_sent(content_type=ContentType.onchain)
     await send_offchain_emails(background_tasks)
+    set_waiting_as_sent(content_type=ContentType.offchain)
     await send_calendar_events_emails(background_tasks)
+    set_waiting_as_sent(content_type=ContentType.calendar)
+
     return JSONResponse(status_code=200, content={"message": "send emails initiated."})
 
 
 async def send_onchain_emails(
         background_tasks: BackgroundTasks) -> JSONResponse:
     with SessionLocal() as db:
-        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.onchain)
+        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.onchain, sent=False)
         on_chain_user_emails = db.query(Subscription).filter_by(onchain=True, verified=True)
     mail_content = ""
     for email in waiting_elems:
@@ -437,7 +447,7 @@ async def send_onchain_emails(
 async def send_offchain_emails(
         background_tasks: BackgroundTasks) -> JSONResponse:
     with SessionLocal() as db:
-        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.offchain)
+        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.offchain, sent=False)
         on_chain_user_emails = db.query(Subscription).filter_by(offchain=True, verified=True)
     mail_content = ""
     for email in waiting_elems:
@@ -455,7 +465,7 @@ async def send_offchain_emails(
 async def send_calendar_events_emails(
         background_tasks: BackgroundTasks) -> JSONResponse:
     with SessionLocal() as db:
-        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.calendar)
+        waiting_elems = db.query(WaitingList).filter_by(content_type=ContentType.calendar, sent=False)
         on_chain_user_emails = db.query(Subscription).filter_by(calendar=True, verified=True)
     mail_content = ""
     for email in waiting_elems:
@@ -565,110 +575,110 @@ async def send_calendar_events(background_tasks):
 
 def on_chain_proposals_telegram_format(proposal: OnchainProposal):
     return f"""
-            {telegram.helpers.escape_markdown(proposal.description[:3200], version=1)}
-            -----------------------------
-            *id*: "{proposal.id}"
-            *txnHash*: "{proposal.txnHash}"
-            *state*: "{proposal.state}"
-            *creationTime*: {proposal.creationTime}
-            *executionTime*: {proposal.executionTime}
+{telegram.helpers.escape_markdown(proposal.description[:3200], version=1)}
+-----------------------------
+*id*: "{proposal.id}"
+*txnHash*: "{proposal.txnHash}"
+*state*: "{proposal.state}"
+*creationTime*: {proposal.creationTime}
+*executionTime*: {proposal.executionTime}
             """
 
 
 def on_chain_proposals_mail_format(proposal: OnchainProposal):
     return f"""
-            {proposal.description}
-            *id*: "{proposal.id}"
-            *txnHash*: "{proposal.txnHash}"
-            *state*: "{proposal.state}"
-            *creationTime*: {proposal.creationTime}
-            *executionTime*: {proposal.executionTime}
+{proposal.description}
+*id*: "{proposal.id}"
+*txnHash*: "{proposal.txnHash}"
+*state*: "{proposal.state}"
+*creationTime*: {proposal.creationTime}
+*executionTime*: {proposal.executionTime}
             """
 
 
 def on_chain_proposals_discord_format(proposal: OnchainProposal):
     description = proposal.description[:2000]
     footer = f"""
-            *id*: "{proposal.id}"
-            *txnHash*: "{proposal.txnHash}"
-            *state*: "{proposal.state}"
-            *creationTime*: {proposal.creationTime}
-            *executionTime*: {proposal.executionTime}
-            """[:2000]
+*id*: "{proposal.id}"
+*txnHash*: "{proposal.txnHash}"
+*state*: "{proposal.state}"
+*creationTime*: {proposal.creationTime}
+*executionTime*: {proposal.executionTime}
+"""[:2000]
     title = "Proposal"
     return title, description, footer
 
 
 def off_chain_proposals_telegram_format(proposal: OffchainProposal):
     return f"""
-            *{telegram.helpers.escape_markdown(proposal.title)}* _(state:{proposal.state})_
-        *space*: {proposal.space.__repr__()} ,*type*: {proposal.type}
-        *app*: {proposal.app}, *author*: {proposal.author}      
-        *start*: {proposal.start} ,*end*: {proposal.end} ,*created*: {proposal.created}
+*{telegram.helpers.escape_markdown(proposal.title)}* _(state:{proposal.state})_
+*space*: {proposal.space.__repr__()} ,*type*: {proposal.type}
+*app*: {proposal.app}, *author*: {proposal.author}      
+*start*: {proposal.start} ,*end*: {proposal.end} ,*created*: {proposal.created}
 
-        {telegram.helpers.escape_markdown(proposal.body[:3100])}
-        *choices*: {''.join(proposal.choices)[:500]} 
-        --------
-        *ipfs*: {proposal.ipfs}
-        *link*: {proposal.link}
-        *id*: {proposal.id}
+{telegram.helpers.escape_markdown(proposal.body[:3100])}
+*choices*: {''.join(proposal.choices)[:500]} 
+--------
+*ipfs*: {proposal.ipfs}
+*link*: {proposal.link}
+*id*: {proposal.id}
             """[:4000]
 
 
 def off_chain_proposals_mail_format(proposal: OffchainProposal):
     return f"""
-            *{proposal.title}* _(state:{proposal.state})_
-        *space*: {proposal.space.__repr__()} ,*type*: {proposal.type}
-        *app*: {proposal.app}, *author*: {proposal.author}      
-        *start*: {proposal.start} ,*end*: {proposal.end} ,*created*: {proposal.created}
-        {proposal.body}
-        *choices*: {''.join(proposal.choices)} 
-        --------
-        *ipfs*: {proposal.ipfs}
-        *link*: {proposal.link}
-        *id*: {proposal.id}
+*{proposal.title}* _(state:{proposal.state})_
+*space*: {proposal.space.__repr__()} ,*type*: {proposal.type}
+*app*: {proposal.app}, *author*: {proposal.author}      
+*start*: {proposal.start} ,*end*: {proposal.end} ,*created*: {proposal.created}
+{proposal.body}
+*choices*: {''.join(proposal.choices)} 
+--------
+*ipfs*: {proposal.ipfs}
+*link*: {proposal.link}
+*id*: {proposal.id}
             """
 
 
 def off_chain_proposals_discord_format(proposal: OffchainProposal):
     description = proposal.body[:2000]
     footer = f"""
-        *choices*: {proposal.choices} 
-        *ipfs*: {proposal.ipfs}
-        *link*: {proposal.link}
-        *id*: {proposal.id}
-            """[:2000]
+*choices*: {proposal.choices} 
+*ipfs*: {proposal.ipfs}
+*link*: {proposal.link}
+*id*: {proposal.id}
+    """[:2000]
     title = f"*{proposal.title}* _(state:{proposal.state})_"
     return title, description, footer
 
 
 def calendar_mail_format(event: dict):
     return f"""
-                {event.get('summary')} _(Status: {event.get('status')})_
-        Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
-        End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
-        Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
-        hangoutLink: {event.get('hangoutLink')}
+{event.get('summary')} _(Status: {event.get('status')})_
+Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
+End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
+Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
+hangoutLink: {event.get('hangoutLink')}
         """
 
 
 def calendar_telegram_format(event: dict):
     return f"""
-                {event.get('summary')} _(Status: {event.get('status')})_
-        Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
-        End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
-        Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
-        hangoutLink: {event.get('hangoutLink')}
+{event.get('summary')} _(Status: {event.get('status')})_
+Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
+End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
+Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
+hangoutLink: {event.get('hangoutLink')}
         """
 
 
 def calendar_discord_format(event: dict):
     title = f"{event.get('summary')} _(Status: {event.get('status')})_"
     description = f"""
-        Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
-        End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
-        Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
-        hangoutLink: {event.get('hangoutLink')}
+Start: {event.get('start', {}).get('dateTime')} (timeZone:{event.get('start', {}).get('timeZone')})
+End: {event.get('end', {}).get('dateTime')} (timeZone:{event.get('end', {}).get('timeZone')})
+Event Link: {event.get('htmlLink').replace("/calendar/event?eid=", "/calendar/u/0/r/eventedit/copy/")}
+hangoutLink: {event.get('hangoutLink')}
         """
     return title, description, None
 
