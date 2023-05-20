@@ -19,14 +19,17 @@ Video demo is at
 
 ## Quickstart with Docker
 
-To run the application with Docker, simply build the image and run it using Docker Compose. 
+To run the application with Docker, first set the config file and then build the image and run it using Docker Compose. 
 
-1. Build the image:
+1. Clone the repository.
+2. Copy [config_sample.py](config_sample.py) to a new file
+named `config.py` and fill in the missing values.
+3. Build the image:
    ```
    docker compose build
    ```
 
-2. Run the image:
+4. Run the image:
    ```
    docker compose up -d
    ```
@@ -36,13 +39,15 @@ By default, the application will be accessible on port 8000. If you want to use 
 Once the image is built and running, you can access the application using the configured port.
 
 
-## Requirements
+## Without Docker
+
+### Requirements
 
 To run ENSify, make sure you have Python 3.6 or a higher
 version installed on your system. To install the
 dependencies you need `pip`.
 
-## Installation
+### Installation
 
 1- Clone the repository.
 
@@ -53,12 +58,12 @@ run the following command:
 pip install -r requirements.txt
 ```
 
-## Configuration
+### Configuration
 
 Copy [config_sample.py](config_sample.py) to a new file
 named `config.py` and fill in the missing values.
 
-## Running
+### Running
 
 1- Run the main web app:
 
