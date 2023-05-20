@@ -33,7 +33,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # define the database connection
-SQLALCHEMY_DATABASE_URL = "sqlite:///./subscriptions.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./db/subscriptions.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

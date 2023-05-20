@@ -17,6 +17,25 @@ ENSify demo is up at
 Video demo is at
 [https://youtu.be/5bsi-g_NXAM](https://youtu.be/5bsi-g_NXAM)
 
+## Quickstart with Docker
+
+To run the application with Docker, simply build the image and run it using Docker Compose. 
+
+1. Build the image:
+   ```
+   docker compose build
+   ```
+
+2. Run the image:
+   ```
+   docker compose up -d
+   ```
+
+By default, the application will be accessible on port 8000. If you want to use a different port, modify the `docker-compose.yml` file accordingly.
+
+Once the image is built and running, you can access the application using the configured port.
+
+
 ## Requirements
 
 To run ENSify, make sure you have Python 3.6 or a higher

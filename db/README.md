@@ -1,0 +1,1 @@
+the db directory, which is also mounted in `docker-compose.yml` file.
