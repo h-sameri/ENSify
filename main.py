@@ -5,7 +5,6 @@ from typing import List, Annotated
 
 import httpx
 import requests
-import telegram
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, Form, Request
 from fastapi_mail import FastMail, MessageSchema, MessageType
