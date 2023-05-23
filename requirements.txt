@@ -4,6 +4,7 @@ httpx
 uvicorn[standard]
 pydantic
 sqlalchemy
+python-telegram-bot[socks]
 httpx-socks
 requests
 discord_webhook
